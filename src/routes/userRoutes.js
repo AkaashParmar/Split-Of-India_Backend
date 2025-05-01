@@ -1,6 +1,6 @@
 const express = require('express');
-const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile } = require('../controllers/userController');
-const { protect } = require('../middlewares/authMiddleware');
+const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers } = require('../controllers/userController');
+const { protect  } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 router.post('/register', registerUser);
@@ -9,6 +9,12 @@ router.get('/profile', protect, getUserProfile);
 
 // @desc    Update user profile (protected route)
 router.put('/profile', protect, updateUserProfile);
+
+//get all users
+router.get('/all-users',getallUsers);
+
+//delete a user
+router.delete("/:id",deleteaUsers);
 
 // Forgot password (send OTP)
 router.post('/forgotPassword', forgotPassword);

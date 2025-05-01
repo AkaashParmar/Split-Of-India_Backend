@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
 const generateOTP = require('../utils/otpGenerator');   // Correct import for OTP generation
 const sendEmail = require('../utils/sendEmail');       // Correct import for sending emails
-
+const bcrypt = require('bcryptjs'); 
 
 // @desc    Register a new user
 exports.registerUser = asyncHandler(async (req, res) => {
@@ -52,7 +52,7 @@ exports.authUser = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Get user profile
+// @desc    Get a single user profile
 exports.getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
@@ -94,52 +94,96 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
+//get all user
 
+exports.getallUsers = asyncHandler(async (req, res) => {
+    const users = await User.find(); // You can filter if needed
+    res.status(200).json(users);
+});
+
+//delete a user
+exports.deleteaUsers = asyncHandler(async (req, res) => {
+    console.log(req.params);
+    const {id} = req.params;
+
+    try{
+        const deleteaUsers = await User.findByIdAndDelete(id);
+        res.json({
+            deleteaUsers
+        })
+    }
+    catch(error)
+    {
+        throw new Error(error);
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// @desc    Forgot password (send OTP to email)
 exports.forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
+
     if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
 
-    // Generate OTP for password reset
+    // Generate OTP
     const otp = generateOTP();
 
-    // Send OTP to user email
-    await sendEmail(email, 'Password Reset OTP', `Your OTP for password reset is: ${otp}`);
-
-    // You can store the OTP in the database or use a temporary storage system for validation
-    user.resetOTP = otp;
+    // Save OTP temporarily in the database (you can use a separate OTP model or session)
+    user.otp = otp;
+    user.otpExpire = Date.now() + 15 * 60 * 1000;  // OTP valid for 15 minutes
     await user.save();
 
-    res.json({ message: 'OTP sent to email' });
-});
+    // Send OTP to the user's email
+    const message = `Your OTP for password reset is: ${otp}. It is valid for 15 minutes.`;
+    await sendEmail(email, 'Password Reset OTP', message);
 
-// @desc    Reset password (verify OTP and update password)
+    res.status(200).json({ message: 'OTP sent to your email' });
+});
+// Reset Password
 exports.resetPassword = asyncHandler(async (req, res) => {
     const { email, otp, newPassword } = req.body;
-
+  
     const user = await User.findOne({ email });
-
+  
     if (!user) {
-        res.status(404);
-        throw new Error('User not found');
+      res.status(404);
+      throw new Error('Invalid request'); // Do not reveal whether user exists
     }
-
+  
     // Check if OTP is valid and not expired
     if (user.otp !== otp || Date.now() > user.otpExpire) {
-        res.status(400);
-        throw new Error('Invalid or expired OTP');
+      res.status(400);
+      throw new Error('Invalid or expired OTP');
     }
-
-    // Update the user's password
-    user.password = newPassword;
-    user.otp = undefined;  // Clear OTP
-    user.otpExpire = undefined;  // Clear OTP expiration
-
+  
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+  
+    // Clear OTP fields
+    user.otp = undefined;
+    user.otpExpire = undefined;
+  
     await user.save();
-
+  
     res.status(200).json({ message: 'Password updated successfully' });
-});
+  });
