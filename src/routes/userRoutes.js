@@ -1,6 +1,8 @@
 const express = require('express');
 const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers } = require('../controllers/userController');
-const { protect  } = require('../middlewares/authMiddleware');
+const { protect, isAdmin } = require('../middlewares/authMiddleware');
+
+
 const router = express.Router();
 
 router.post('/register', registerUser);
@@ -23,4 +25,9 @@ router.post('/forgotPassword', forgotPassword);
 router.post('/resetPassword', resetPassword);
 
 
+//check is admin
+router.get('/admin-route', protect, isAdmin, (req, res) => {
+        res.send('Welcome Admin!');
+    });
+    
 module.exports = router;

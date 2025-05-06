@@ -26,3 +26,17 @@ exports.protect = asyncHandler(async (req, res, next) => {
     }
 });
 
+
+
+// Middleware to check if user is admin
+exports.isAdmin = asyncHandler(async (req, res, next) => {
+    if (req.user && req.user.isAdmin) {
+        next();
+    } else {
+        res.status(403);
+        throw new Error('Not authorized as admin');
+    }
+});
+
+
+

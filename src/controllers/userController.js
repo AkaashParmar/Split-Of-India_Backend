@@ -1,13 +1,16 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
-const generateOTP = require('../utils/otpGenerator');   // Correct import for OTP generation
-const sendEmail = require('../utils/sendEmail');       // Correct import for sending emails
+const generateOTP = require('../utils/otpGenerator');   
+const sendEmail = require('../utils/sendEmail');       
 const bcrypt = require('bcryptjs'); 
+const { isAdmin } = require('../middlewares/authMiddleware');
+
+
 
 // @desc    Register a new user
 exports.registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password } = req.body;
+    const { name, email, password,isAdmin  } = req.body;
 
     const userExists = await User.findOne({ email });
 
@@ -16,7 +19,12 @@ exports.registerUser = asyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({
+        name,
+        email,
+        password,
+        isAdmin: isAdmin || false,  
+    });
 
     if (user) {
         res.status(201).json({
