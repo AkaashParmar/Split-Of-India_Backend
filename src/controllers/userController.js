@@ -195,3 +195,44 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   
     res.status(200).json({ message: 'Password updated successfully' });
   });
+
+//add to wishlist
+
+  exports.addToWishlist = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    const productId = req.params.productId;
+
+    if (!user.wishlist.includes(productId)) {
+        user.wishlist.push(productId);
+        await user.save();
+        res.status(200).json({ message: 'Product added to wishlist' });
+    } else {
+        res.status(400);
+        throw new Error('Product already in wishlist');
+    }
+});
+//remove form wishlist
+exports.removeFromWishlist = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    // Ensure the productId from URL is valid
+    const productId = req.params.productId;
+
+    user.wishlist = user.wishlist.filter(
+        (item) => item.toString() !== productId // Ensure correct comparison
+    );
+
+    await user.save();
+
+    res.status(200).json({ message: 'Product removed from wishlist' });
+});
+
+// @desc Get user's wishlist
+// @route GET /api/users/wishlist
+// @access Private
+exports.getWishlist = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate('wishlist');
+    res.status(200).json(user.wishlist);
+});
+
