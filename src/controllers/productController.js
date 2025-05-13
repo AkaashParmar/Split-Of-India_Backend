@@ -1,6 +1,8 @@
 const Product = require('../models/productModel');
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
+const Category = require('../models/categoryModel');
+const mongoose = require("mongoose");
 
 // POST: Create product
 exports.createProduct = async (req, res) => {
@@ -19,17 +21,49 @@ exports.createProduct = async (req, res) => {
 // GET: Get all products with optional category filter and populated category
 exports.getProducts = async (req, res) => {
   try {
-    const filter = {};
-    if (req.query.category) filter.category = req.query.category;
+    const queryObj = {};
 
-    // Find products and populate the category field
-    const products = await Product.find(filter).populate('category');
+    // 1. Filtering
+    if (req.query.category) {
+      queryObj.category = new mongoose.Types.ObjectId(req.query.category);
+    }
+    if (req.query.brand) queryObj.brand = req.query.brand;
+    if (req.query.price_gte) queryObj.price = { ...queryObj.price, $gte: req.query.price_gte };
+    if (req.query.price_lte) queryObj.price = { ...queryObj.price, $lte: req.query.price_lte };
+    if (req.query.inStock) queryObj.countInStock = { $gt: 0 };
 
-    res.json(products);
+    // 2. Sorting
+    const sortBy = req.query.sort ? req.query.sort.split(',').join(' ') : "-createdAt"; // Default sorting by createdAt in descending order
+
+    // 3. Field Limiting (Selecting Specific Fields to Return)
+    const fields = req.query.fields ? req.query.fields.split(',').join(' ') : ""; // Default to returning all fields
+
+    // 4. Pagination
+    const page = parseInt(req.query.page) || 1; // Default page is 1
+    const limit = parseInt(req.query.limit) || 10; // Default limit is 10 products per page
+    const skip = (page - 1) * limit; // Skip products for pagination
+
+    // 5. Fetching data from the database
+    const products = await Product.find(queryObj)
+      .select(fields) // Apply field limiting (select only required fields)
+      .sort(sortBy)   // Apply sorting
+      .skip(skip)     // Skip products based on pagination
+      .limit(limit)   // Limit the number of products per page
+      .populate("category", "name"); // Optional: Populate the category field with category name
+
+    // Send the response back
+    res.status(200).json({
+      success: true,
+      page,             // Current page number
+      results: products.length, // Number of products in this page
+      data: products    // The products data
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 
@@ -49,10 +83,10 @@ exports.getProductById = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const { name, description, price, category, image } = req.body;
+    const { title, description, price, category, image } = req.body;
 
     const updatedData = {
-      ...(name && { name }),
+      ...(title && { title }),
       ...(description && { description }),
       ...(price && { price }),
       ...(category && { category }),
