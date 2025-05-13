@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const categoryRoutes = require('./routes/categoryRoutes.js');
 const morgan = require("morgan");
+const cartRoutes = require('./routes/cartRoutes');
 
 dotenv.config();
 connectDB();
@@ -24,10 +25,15 @@ app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories',categoryRoutes);
 
+//cart
+app.use('/api/cart', cartRoutes);
+
 
 // Error Middleware
 app.use(notFound);
 app.use(errorHandler);
+
+
 
 
 
