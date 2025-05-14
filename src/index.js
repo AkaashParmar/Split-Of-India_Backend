@@ -8,6 +8,7 @@ const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const categoryRoutes = require('./routes/categoryRoutes.js');
 const morgan = require("morgan");
 const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/OrderRoutes');
 
 dotenv.config();
 connectDB();
@@ -27,6 +28,9 @@ app.use('/api/categories',categoryRoutes);
 
 //cart
 app.use('/api/cart', cartRoutes);
+
+//order
+app.use('/api/orders', orderRoutes);
 
 
 // Error Middleware
