@@ -228,3 +228,52 @@ exports.getWishlist = asyncHandler(async (req, res) => {
     res.status(200).json(user.wishlist);
 });
 
+  
+  
+  // @desc    Verify OTP for user registration
+exports.verifyOTP = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    // Check if OTP is valid and not expired
+    if (user.otp !== otp || Date.now() > user.otpExpire) {
+        res.status(400);
+        throw new Error('Invalid or expired OTP');
+    }
+
+    // OTP is valid, you can proceed with additional logic (like confirming registration or allowing login)
+    res.status(200).json({ message: 'OTP verified successfully' });
+});
+
+// @desc    Send OTP to user email (standalone)
+exports.sendOtp = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpire = Date.now() + 15 * 60 * 1000;
+    await user.save();
+
+    const message = `Your OTP is: ${otp}. It will expire in 15 minutes.`;
+    await sendEmail(user.email, 'Your OTP', message);
+
+    res.status(200).json({ message: 'OTP sent to your email' });
+});
