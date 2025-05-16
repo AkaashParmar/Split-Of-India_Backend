@@ -7,8 +7,8 @@ const userSchema = mongoose.Schema({
     phone: { type: String, required: true }, //  for phone number
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
-    otp: { type: String }, //  for OTP
-    otpExpire: { type: Date }, //  for OTP expiry
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+
    
 }, {
     timestamps: true,
