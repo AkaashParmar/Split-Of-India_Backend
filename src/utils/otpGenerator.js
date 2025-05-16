@@ -1,9 +1,6 @@
 // utils/otpGenerator.js
-
-const otpGenerator = require('otp-generator');
-
 const generateOTP = () => {
-    return otpGenerator.generate(6, { upperCase: false, specialChars: false, digits: true });
+  return (Math.floor(1000 + Math.random() * 9000)).toString();  // 4-digit numeric string
 };
 
 module.exports = generateOTP;

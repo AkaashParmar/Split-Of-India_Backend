@@ -1,13 +1,15 @@
-// utils/sendEmail.js
-
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (to, subject, text) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('Email credentials are not set. Please check your environment variables.');
+    }
+
     const transporter = nodemailer.createTransport({
-        service: 'gmail',  // Use your email service (e.g., Gmail, SendGrid, etc.)
+        service: 'gmail',
         auth: {
-            user: process.env.EMAIL_USER,  // Email address from which the email is sent
-            pass: process.env.EMAIL_PASS,  // Password for the email
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
     });
 
@@ -19,7 +21,8 @@ const sendEmail = async (to, subject, text) => {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent to:', to, 'Response:', info.response);
     } catch (error) {
         console.error('Error sending email:', error);
         throw new Error('Could not send email');

@@ -9,6 +9,7 @@ const categoryRoutes = require('./routes/categoryRoutes.js');
 const morgan = require("morgan");
 
 dotenv.config();
+console.log("EMAIL_USER:", process.env.EMAIL_USER); // ✅ Debug
 connectDB();
 
 const app = express();

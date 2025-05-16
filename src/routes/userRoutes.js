@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers } = require('../controllers/userController');
+const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers ,verifyOTP, sendOtp,} = require('../controllers/userController');
 const { protect, isAdmin } = require('../middlewares/authMiddleware');
 
 
@@ -18,11 +18,14 @@ router.get('/all-users',getallUsers);
 //delete a user
 router.delete("/:id",deleteaUsers);
 
+router.post('/send-otp', sendOtp);
+
 // Forgot password (send OTP)
 router.post('/forgotPassword', forgotPassword);
 
 // Reset password (verify OTP and update password)
 router.post('/resetPassword', resetPassword);
+router.post('/verify-otp', verifyOTP);
 
 
 //check is admin
