@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers,addToWishlist,removeFromWishlist,getWishlist } = require('../controllers/userController');
+const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers,addToWishlist,removeFromWishlist,getWishlist, verifyOTP, sendOtp,} = require('../controllers/userController');
 const { protect, isAdmin } = require('../middlewares/authMiddleware');
 
 
@@ -25,7 +25,7 @@ router.post('/forgotPassword', forgotPassword);
 
 // Reset password (verify OTP and update password)
 router.post('/resetPassword', resetPassword);
-
+router.post('/verify-otp', verifyOTP);
 
 router.post('/wishlist/:productId', protect, addToWishlist);  // for adding to wishlist
 router.delete('/wishlist/:productId', protect, removeFromWishlist);  // for removing from wishlist
