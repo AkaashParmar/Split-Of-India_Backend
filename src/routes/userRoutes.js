@@ -18,6 +18,8 @@ router.get('/all-users',getallUsers);
 //delete a user
 router.delete("/:id",deleteaUsers);
 
+router.post('/send-otp', sendOtp);
+
 // Forgot password (send OTP)
 router.post('/forgotPassword', forgotPassword);
 

@@ -15,6 +15,7 @@ const couponRoutes = require('./routes/CouponRoutes');
 
 
 dotenv.config();
+console.log("EMAIL_USER:", process.env.EMAIL_USER); // ✅ Debug
 connectDB();
 
 const app = express();

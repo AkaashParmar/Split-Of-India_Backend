@@ -10,7 +10,7 @@ const { isAdmin } = require('../middlewares/authMiddleware');
 
 // @desc    Register a new user
 exports.registerUser = asyncHandler(async (req, res) => {
-    const { name, email, password,isAdmin  } = req.body;
+    const {  email, phone,password,isAdmin  } = req.body;
 
     const userExists = await User.findOne({ email });
 
@@ -20,17 +20,29 @@ exports.registerUser = asyncHandler(async (req, res) => {
     }
 
     const user = await User.create({
-        name,
+        // name,
         email,
+        phone,
         password,
         isAdmin: isAdmin || false,  
     });
 
     if (user) {
+        // Generate OTP
+        const otp = generateOTP();
+console.log('Generated OTP:', otp);  // add this debug to check OTP value
+
+user.otp = otp;
+user.otpExpire = Date.now() + 15 * 60 * 1000;
+await user.save();
+
+const message = `Your OTP is: ${otp}. It is valid for 15 minutes.`;
+await sendEmail(user.email, 'Your OTP', message);
+        // Respond with the user info and the token
         res.status(201).json({
             _id: user._id,
-            name: user.name,
             email: user.email,
+            phone: user.phone,
             isAdmin: user.isAdmin,
             token: generateToken(user._id),
         });
@@ -126,22 +138,6 @@ exports.deleteaUsers = asyncHandler(async (req, res) => {
     }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// @desc    Forgot password (send OTP to email)
 exports.forgotPassword = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
@@ -152,21 +148,17 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    // Generate OTP
-    const otp = generateOTP();
+   const otp = generateOTP();
+console.log('Generated OTP:', otp);  // add this debug to check OTP value
 
-    // Save OTP temporarily in the database (you can use a separate OTP model or session)
-    user.otp = otp;
-    user.otpExpire = Date.now() + 15 * 60 * 1000;  // OTP valid for 15 minutes
-    await user.save();
+user.otp = otp;
+user.otpExpire = Date.now() + 15 * 60 * 1000;
+await user.save();
 
-    // Send OTP to the user's email
-    const message = `Your OTP for password reset is: ${otp}. It is valid for 15 minutes.`;
-    await sendEmail(email, 'Password Reset OTP', message);
-
-    res.status(200).json({ message: 'OTP sent to your email' });
+const message = `Your OTP is: ${otp}. It is valid for 15 minutes.`;
+await sendEmail(user.email, 'Your OTP', message);
 });
-// Reset Password
+
 exports.resetPassword = asyncHandler(async (req, res) => {
     const { email, otp, newPassword } = req.body;
   
@@ -236,3 +228,52 @@ exports.getWishlist = asyncHandler(async (req, res) => {
     res.status(200).json(user.wishlist);
 });
 
+  
+  
+  // @desc    Verify OTP for user registration
+exports.verifyOTP = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    // Check if OTP is valid and not expired
+    if (user.otp !== otp || Date.now() > user.otpExpire) {
+        res.status(400);
+        throw new Error('Invalid or expired OTP');
+    }
+
+    // OTP is valid, you can proceed with additional logic (like confirming registration or allowing login)
+    res.status(200).json({ message: 'OTP verified successfully' });
+});
+
+// @desc    Send OTP to user email (standalone)
+exports.sendOtp = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpire = Date.now() + 15 * 60 * 1000;
+    await user.save();
+
+    const message = `Your OTP is: ${otp}. It will expire in 15 minutes.`;
+    await sendEmail(user.email, 'Your OTP', message);
+
+    res.status(200).json({ message: 'OTP sent to your email' });
+});
