@@ -12,7 +12,6 @@ router.get('/profile', protect, getUserProfile);
 // @desc    Update user profile (protected route)
 router.put('/profile', protect, updateUserProfile);
 
-//get all users
 router.get('/all-users',getallUsers);
 
 //delete a user
