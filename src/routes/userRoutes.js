@@ -9,7 +9,6 @@ router.post('/register', registerUser);
 router.post('/login', authUser);
 router.get('/profile', protect, getUserProfile);
 
-// @desc    Update user profile (protected route)
 router.put('/profile', protect, updateUserProfile);
 
 router.get('/all-users',getallUsers);
