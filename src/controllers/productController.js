@@ -1,19 +1,54 @@
-const Product = require('../models/productModel');
+require('dotenv').config();const Product = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
-const Category = require('../models/categoryModel');
+const Category = require("../models/categoryModel");
 const mongoose = require("mongoose");
+const cloudinary = require("../config/cloudinary-config.js");
+const fs = require('fs');
 
 // POST: Create product
 exports.createProduct = async (req, res) => {
   try {
-    if(req.body.title){
-      req.body.slug=slugify(req.body.title);
+
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
+    const { title, description, brand, category, price, countInStock, state } = req.body;
+
+    if (!title || !description || !brand || !price || !state) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
-    const newProduct = await Product.create(req.body);
-    res.status(201).json(newProduct);
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Product image is required" });
+    }
+
+    const slug = slugify(title);
+    const imageUrl = req.file?.path || null;
+
+    const resultCloud = await cloudinary.uploader.upload(imageUrl, {
+      folder: 'products',
+    });
+
+    // Delete the local file
+    fs.unlinkSync(req.file.path);
+
+    const product = await Product.create({
+      title,
+      slug,
+      description,
+      brand,
+      category,
+      price: Number(price),
+      countInStock: Number(countInStock),
+      state,
+      image: resultCloud.secure_url, // ✅ pass a string
+    });
+
+    res.status(201).json(product);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Create product error:", error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -28,15 +63,21 @@ exports.getProducts = async (req, res) => {
       queryObj.category = new mongoose.Types.ObjectId(req.query.category);
     }
     if (req.query.brand) queryObj.brand = req.query.brand;
-    if (req.query.price_gte) queryObj.price = { ...queryObj.price, $gte: req.query.price_gte };
-    if (req.query.price_lte) queryObj.price = { ...queryObj.price, $lte: req.query.price_lte };
+    if (req.query.price_gte)
+      queryObj.price = { ...queryObj.price, $gte: req.query.price_gte };
+    if (req.query.price_lte)
+      queryObj.price = { ...queryObj.price, $lte: req.query.price_lte };
     if (req.query.inStock) queryObj.countInStock = { $gt: 0 };
 
     // 2. Sorting
-    const sortBy = req.query.sort ? req.query.sort.split(',').join(' ') : "-createdAt"; // Default sorting by createdAt in descending order
+    const sortBy = req.query.sort
+      ? req.query.sort.split(",").join(" ")
+      : "-createdAt"; // Default sorting by createdAt in descending order
 
     // 3. Field Limiting (Selecting Specific Fields to Return)
-    const fields = req.query.fields ? req.query.fields.split(',').join(' ') : ""; // Default to returning all fields
+    const fields = req.query.fields
+      ? req.query.fields.split(",").join(" ")
+      : ""; // Default to returning all fields
 
     // 4. Pagination
     const page = parseInt(req.query.page) || 1; // Default page is 1
@@ -46,32 +87,28 @@ exports.getProducts = async (req, res) => {
     // 5. Fetching data from the database
     const products = await Product.find(queryObj)
       .select(fields) // Apply field limiting (select only required fields)
-      .sort(sortBy)   // Apply sorting
-      .skip(skip)     // Skip products based on pagination
-      .limit(limit)   // Limit the number of products per page
+      .sort(sortBy) // Apply sorting
+      .skip(skip) // Skip products based on pagination
+      .limit(limit) // Limit the number of products per page
       .populate("category", "name"); // Optional: Populate the category field with category name
 
     // Send the response back
     res.status(200).json({
       success: true,
-      page,             // Current page number
+      page, // Current page number
       results: products.length, // Number of products in this page
-      data: products    // The products data
+      data: products, // The products data
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-
-
-
 // GET: Single product with populated category
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category');
-    if (!product) return res.status(404).json({ message: 'Product not found' });
+    const product = await Product.findById(req.params.id).populate("category");
+    if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -80,52 +117,49 @@ exports.getProductById = async (req, res) => {
 
 // PUT: Update product
 
-
 exports.updateProduct = async (req, res) => {
-  try {
-    const { title, description, price, category, image } = req.body;
+  try {
+    const { title, description, price, category, image } = req.body;
 
-    const updatedData = {
-      ...(title && { title }),
-      ...(description && { description }),
-      ...(price && { price }),
-      ...(category && { category }),
-      ...(image && { image })
-    };
+    const updatedData = {
+      ...(title && { title }),
+      ...(description && { description }),
+      ...(price && { price }),
+      ...(category && { category }),
+      ...(image && { image }),
+    };
 
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      updatedData,
-      {
-        new: true,
-        runValidators: true
-      }
-    );
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      updatedData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
-    res.json(product);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+    res.json(product);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 };
-
 
 // DELETE: Delete product
 exports.deleteProduct = async (req, res) => {
-    try {
-      const product = await Product.findByIdAndDelete(req.params.id);
-      if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-      res.json({ message: 'Product deleted successfully' });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
-  
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json({ message: "Product deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // GET: Product count
 exports.getProductCount = async (req, res) => {
@@ -137,3 +171,52 @@ exports.getProductCount = async (req, res) => {
   }
 };
 
+//Products by StateId
+exports.getProductsByState = async (req, res) => {
+  const products = await Product.find({ state: req.params.stateId }).populate(
+    "state"
+  );
+  res.json(products);
+};
+
+
+// POST /api/products/:id/review
+exports.addOrUpdateReview = async (req, res) => {
+  const { star, comment } = req.body;
+  const userId = req.user._id;
+
+  const product = await Product.findById(req.params.id);
+
+  if (!product) return res.status(404).json({ message: "Product not found" });
+
+  const existingReviewIndex = product.ratings.findIndex(
+    (r) => r.postedby.toString() === userId.toString()
+  );
+
+  if (existingReviewIndex !== -1) {
+    // Update existing review
+    product.ratings[existingReviewIndex].star = star;
+    product.ratings[existingReviewIndex].comment = comment;
+  } else {
+    // Add new review
+    product.ratings.push({
+      star,
+      comment,
+      postedby: userId,
+    });
+  }
+
+  // Recalculate average rating and number of reviews
+  const totalStars = product.ratings.reduce((acc, r) => acc + r.star, 0);
+  const averageRating = totalStars / product.ratings.length;
+
+  product.rating = averageRating;
+  product.numReviews = product.ratings.length;
+
+  await product.save();
+
+  res.status(200).json({
+    message: existingReviewIndex !== -1 ? 'Review updated' : 'Review added',
+    product,
+  });
+};
