@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   createProduct,
@@ -6,18 +6,36 @@ const {
   getProductById,
   updateProduct,
   deleteProduct,
-  getProductCount
-} = require('../controllers/productController');
+  getProductsByState,
+  getProductCount,
+  addOrUpdateReview,
+} = require("../controllers/productController");
+const upload = require("../middlewares/uploadMiddleware.js");
 
-const {protect,isAdmin,authMiddleware} = require("../middlewares/authMiddleware");
+const { protect, isAdmin } = require("../middlewares/authMiddleware");
 
-router.post('/',protect,isAdmin, createProduct);
-//get all product
-router.get('/', getProducts);
-router.get('/count', getProductCount);
-//get a single product
-router.get('/:id', getProductById);
-router.put('/:id', protect, isAdmin, updateProduct);
-router.delete('/:id', protect, isAdmin, deleteProduct);
+// Create a product (admin only)
+router.post("/", upload.single("image"), createProduct);
+
+// Get all products
+// router.get("/get-products", getProducts);
+
+// Get product count
+router.get("/count", getProductCount);
+
+// Get products by state
+router.get("/state/:stateId", getProductsByState);
+
+// Get a single product
+router.get("/:id", getProductById);
+
+// Update a product (admin only)
+router.put("/:id", protect, isAdmin, updateProduct);
+
+// Delete a product (admin only)
+router.delete("/:id", protect, isAdmin, deleteProduct);
+
+// Review
+router.post('/:id/review', protect, addOrUpdateReview);
 
 module.exports = router;

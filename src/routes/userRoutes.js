@@ -1,6 +1,6 @@
 const express = require('express');
-const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers,addToWishlist,removeFromWishlist,getWishlist, verifyOTP, sendOtp,} = require('../controllers/userController');
-const { protect, isAdmin } = require('../middlewares/authMiddleware');
+const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers,addToWishlist,removeFromWishlist,getWishlist, verifyOTP, sendOtp,} = require('../controllers/userController.js');
+const { protect, isAdmin } = require('../middlewares/authMiddleware.js');
 
 
 const router = express.Router();
@@ -33,7 +33,7 @@ router.get('/wishlist', protect, getWishlist);  // for getting wishlist
 
 //check is admin
 router.get('/admin-route', protect, isAdmin, (req, res) => {
-        res.send('Welcome Admin!');
+    res.send('Welcome Admin!');
     });
 
     

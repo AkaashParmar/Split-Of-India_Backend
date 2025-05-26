@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./db/db.js');
 const productRoutes = require('./routes/productRoutes');
-const userRoutes = require('./routes/userRoutes');
+const userRoutes = require('./routes/userRoutes.js');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const categoryRoutes = require('./routes/categoryRoutes.js');
 const morgan = require("morgan");
@@ -12,48 +12,50 @@ const orderRoutes = require('./routes/OrderRoutes');
 const blogRoutes = require('./routes/BlogRoutes');
 const path = require('path');
 const couponRoutes = require('./routes/CouponRoutes');
-
-
+const regionRoutes = require('./routes/regionRoutes.js');
+const stateRoutes = require('./routes/stateRoutes.js');
 dotenv.config();
-console.log("EMAIL_USER:", process.env.EMAIL_USER); // ✅ Debug
+
+const bodyParser = require('body-parser');
+
+
+console.log("EMAIL_USER:", process.env.EMAIL_USER); 
 connectDB();
 
 const app = express();
-
 app.use(morgan("dev"));
 
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // To accept JSON data
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-//coupon
-app.use('/api/coupons', couponRoutes);
+app.get('/api/running', (req, res) => {
+    res.json({ message: 'Server is running' });
+}); 
+
 
 // Routes
+app.use('/api/coupons', couponRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories',categoryRoutes);
-
-//cart
 app.use('/api/cart', cartRoutes);
-
-//order
 app.use('/api/orders', orderRoutes);
-
-//Blogs
 app.use('/api/blogs', blogRoutes);
+app.use('/api/regions', regionRoutes);
+app.use('/api/states', stateRoutes);
 
 // To serve uploaded images
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 
 
 // Error Middleware
 app.use(notFound);
 app.use(errorHandler);
-
-
 
 // Server
 const PORT = process.env.PORT || 5000;

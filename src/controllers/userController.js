@@ -51,8 +51,13 @@ exports.registerUser = asyncHandler(async (req, res) => {
 });
 
 // Authenticate user & get token
-exports.authUser = asyncHandler(async (req, res) => {
+exports.authUser = async (req, res) => {
+  console.log("req.body:", req.body);
+  
   const { email, password } = req.body;
+
+  console.log("req.body:", req.body);
+  
 
   const user = await User.findOne({ email });
 
@@ -68,7 +73,7 @@ exports.authUser = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error("Invalid email or password");
   }
-});
+};
 
 // Get a single user profile
 exports.getUserProfile = asyncHandler(async (req, res) => {
