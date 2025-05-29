@@ -1,5 +1,6 @@
 const Category = require('../models/categoryModel');
 const mongoose = require('mongoose');
+const Product = require('../models/productModel');
 
 exports.createCategory = async (req, res) => {
   try {
@@ -79,3 +80,27 @@ exports.updateCategory = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
+exports.getProductsByCategory = async (req, res) => {
+  const { category } = req.params; // category here is categoryId string
+
+  try {
+    // Check if category exists
+    const categoryExists = await Category.findById(category);
+
+    if (!categoryExists) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Find all products with this category id
+    // IMPORTANT: use category: category (or shorthand) to filter by category id field
+    const products = await Product.find({ category });
+
+    res.json(products);
+  } catch (error) {
+    console.error('Error fetching products by category:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
