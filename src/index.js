@@ -54,7 +54,19 @@ app.use('/api/contact', contactRoutes);
 
 // To serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/suggest-product', suggestionRoutes);
 
+
+
+app.use((err, req, res, next) => {
+    // Global error handler
+    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+    res.status(statusCode);
+    res.json({
+        message: err.message,
+        stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    });
+});
 
 // Error Middleware
 app.use(notFound);
