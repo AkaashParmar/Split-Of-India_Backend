@@ -2,7 +2,7 @@ require('dotenv').config();
 const Product = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
-const Category = require("../models/categoryModel");
+const {Category} = require("../models/categoryModel");
 const ProductSuggestion = require('../models/suggestions');
 const State = require("../models/stateModel.js");
 const mongoose = require("mongoose");
@@ -255,27 +255,6 @@ exports.getProductsByStateSlug = async (req, res) => {
   }
 };
 
-const handleSuggestionForm = async (req, res) => {
-  try {
-    const { productName, categoryName, productDescription } = req.body;
-    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
-
-    const newSuggestion = new ProductSuggestion({
-      productName,
-      categoryName,
-      productDescription,
-      images: imagePaths
-    });
-
-    await newSuggestion.save();
-
-    res.status(201).json({ message: 'Suggestion submitted successfully!' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error while submitting suggestion.' });
-  }
-};
-module.exports = { handleSuggestionForm };
 
 exports.getFilteredProducts = async (req, res) => {
   const { category, color, size, region, state, minPrice, maxPrice } = req.query;
@@ -346,3 +325,24 @@ exports.getDealsOfTheDay = async (req, res) => {
   }
 };
 
+
+exports.handleSuggestionForm = async (req, res) => {
+  try {
+    const { productName, categoryName, productDescription } = req.body;
+    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+
+    const newSuggestion = new ProductSuggestion({
+      productName,
+      categoryName,
+      productDescription,
+      images: imagePaths
+    });
+
+    await newSuggestion.save();
+
+    res.status(201).json({ message: 'Suggestion submitted successfully!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error while submitting suggestion.' });
+  }
+};
