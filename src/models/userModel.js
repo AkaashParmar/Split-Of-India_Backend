@@ -2,18 +2,17 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = mongoose.Schema({
-    //  name: { type: String, required: false },
+    username: { type: String, required: true }, // ✅ Add this
     email: { type: String, required: true, unique: true },
-    phone: { type: String, required: true }, //  for phone number
+    phone: { type: String, required: true },
     password: { type: String, required: true },
     isAdmin: { type: Boolean, required: true, default: false },
-    otp: { type: String }, //  for OTP
+    otp: { type: String },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
-
-   
 }, {
     timestamps: true,
 });
+
 
 // Password encryption
 userSchema.pre('save', async function (next) {
