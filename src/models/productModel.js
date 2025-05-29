@@ -47,12 +47,18 @@ const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
   name: String,
+  image: String,
+  rating: Number,
   category: String,
   color: String,
   price: Number,
-  // size: String,
+  size: String,
   region: String,
   state: String,
-});
+  currentPrice: String,
+  originalPrice: String,
+  discount: String,
+   description: String,
+}, { timestamps: true});
 
 module.exports = mongoose.model('Product', productSchema);

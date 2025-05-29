@@ -220,10 +220,17 @@ exports.removeFromWishlist = asyncHandler(async (req, res) => {
 });
 
 
+
 // Get user's wishlist
 exports.getWishlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).populate("wishlist");
-  res.status(200).json(user.wishlist);
+
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  res.status(200).json(user.wishlist); // Return populated product details
 });
 
 // Verify OTP for user registration
