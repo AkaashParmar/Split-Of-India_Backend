@@ -12,6 +12,7 @@ const orderRoutes = require('./routes/OrderRoutes');
 const blogRoutes = require('./routes/BlogRoutes');
 const path = require('path');
 const couponRoutes = require('./routes/CouponRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const regionRoutes = require('./routes/regionRoutes.js');
 const stateRoutes = require('./routes/stateRoutes.js');
 dotenv.config();
@@ -46,11 +47,11 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/regions', regionRoutes);
 app.use('/api/states', stateRoutes);
+app.use('/api/contact', contactRoutes);
+
 
 // To serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-
 
 
 // Error Middleware

@@ -3,6 +3,6 @@ const { createRegion, getRegions } = require('../controllers/regionController');
 const router = express.Router();
 
 router.post('/', createRegion);
-router.get('/', getRegions);
+router.get('/get-region', getRegions);
 
 module.exports = router;

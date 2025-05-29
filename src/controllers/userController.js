@@ -8,7 +8,7 @@ const { isAdmin } = require("../middlewares/authMiddleware");
 
 // Register a new user
 exports.registerUser = asyncHandler(async (req, res) => {
-  const { email, phone, password, isAdmin } = req.body;
+  const { username, email, phone, password, isAdmin } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -18,7 +18,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
-    // name,
+    username, // ✅ Add this line
     email,
     phone,
     password,
@@ -26,7 +26,6 @@ exports.registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    
     const otp = generateOTP();
     console.log("Generated OTP:", otp); // add this debug to check OTP value
 
@@ -53,18 +52,16 @@ exports.registerUser = asyncHandler(async (req, res) => {
 // Authenticate user & get token
 exports.authUser = async (req, res) => {
   console.log("req.body:", req.body);
-  
-  const { email, password } = req.body;
 
+  const { email, password } = req.body;
   console.log("req.body:", req.body);
-  
 
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
     res.json({
       _id: user._id,
-      name: user.name,
+      username: user.username, // ✅ Correct key
       email: user.email,
       isAdmin: user.isAdmin,
       token: generateToken(user._id),
@@ -75,6 +72,7 @@ exports.authUser = async (req, res) => {
   }
 };
 
+
 // Get a single user profile
 exports.getUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
@@ -82,7 +80,8 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
   if (user) {
     res.json({
       _id: user._id,
-      name: user.name,
+      username: user.username,   
+      phone: user.phone,         
       email: user.email,
       isAdmin: user.isAdmin,
     });
@@ -91,6 +90,7 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 });
+
 
 // @desc    Update user profile
 exports.updateUserProfile = asyncHandler(async (req, res) => {
@@ -141,7 +141,6 @@ exports.deleteaUsers = asyncHandler(async (req, res) => {
   }
 });
 
-
 exports.forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -161,15 +160,14 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   await sendEmail(user.email, "Your OTP", message);
 });
 
-
 exports.resetPassword = asyncHandler(async (req, res) => {
   const { email, otp, newPassword } = req.body;
 
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new Error("Invalid request")
-    res.status(404);; // Do not reveal whether user exists
+    throw new Error("Invalid request");
+    res.status(404); // Do not reveal whether user exists
   }
 
   // Check if OTP is valid and not expired
@@ -190,7 +188,6 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Password updated successfully" });
 });
 
-
 //add to wishlist
 exports.addToWishlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
@@ -207,7 +204,6 @@ exports.addToWishlist = asyncHandler(async (req, res) => {
   }
 });
 
-
 //remove form wishlist
 exports.removeFromWishlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
@@ -218,7 +214,6 @@ exports.removeFromWishlist = asyncHandler(async (req, res) => {
   await user.save();
   res.status(200).json({ message: "Product removed from wishlist" });
 });
-
 
 // Get user's wishlist
 exports.getWishlist = asyncHandler(async (req, res) => {
@@ -242,7 +237,6 @@ exports.verifyOTP = asyncHandler(async (req, res) => {
   }
   res.status(200).json({ message: "OTP verified successfully" });
 });
-
 
 // Send OTP to user email (standalone)
 exports.sendOtp = asyncHandler(async (req, res) => {
