@@ -9,6 +9,7 @@ const userSchema = mongoose.Schema({
     isAdmin: { type: Boolean, required: true, default: false },
     otp: { type: String },
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    addresses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Address' }],
 }, {
     timestamps: true,
 });
