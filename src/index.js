@@ -16,6 +16,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const regionRoutes = require('./routes/regionRoutes.js');
 const stateRoutes = require('./routes/stateRoutes.js');
 const suggestionRoutes = require('./routes/suggestionRoutes');
+const addressRoutes = require('./routes/addressRoutes.js')
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/regions', regionRoutes);
 app.use('/api/states', stateRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/addresses', addressRoutes);
 
 
 // To serve uploaded images

@@ -21,11 +21,15 @@ exports.createProduct = async (req, res) => {
       brand,
       category,
       price,
+      currentPrice,
+      originalPrice,
+      discount,
       countInStock,
       state,
       color,
-      size,      // <- comes from frontend, will be validated by schema
+      size,         // enum validated by schema
       region,
+      isDealOfTheDay,
     } = req.body;
 
     if (!title || !description || !brand || !price || !state) {
@@ -43,7 +47,7 @@ exports.createProduct = async (req, res) => {
       folder: "products",
     });
 
-    fs.unlinkSync(localImagePath);
+    fs.unlinkSync(localImagePath); // delete local file after upload
 
     const product = await Product.create({
       title,
@@ -52,11 +56,15 @@ exports.createProduct = async (req, res) => {
       brand,
       category,
       price: Number(price),
+      currentPrice,
+      originalPrice,
+      discount,
       countInStock: Number(countInStock),
       state,
       color,
-      size,     // <- valid enum string, e.g. "L"
+      size,
       region,
+      isDealOfTheDay: isDealOfTheDay === "true", // handle checkbox/boolean
       image: resultCloud.secure_url,
     });
 
@@ -66,7 +74,6 @@ exports.createProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 // GET: Get all products with optional category filter and populated category
