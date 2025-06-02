@@ -29,21 +29,14 @@ connectDB();
 
 const app = express();
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false
-}));
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.use(morgan("dev"));
 
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+
 
 app.get('/api/running', (req, res) => {
     res.json({ message: 'Server is running' });
@@ -83,6 +76,7 @@ app.use((err, req, res, next) => {
 // Error Middleware
 app.use(notFound);
 app.use(errorHandler);
+
 
 // Server
 const PORT = process.env.PORT || 5000;
