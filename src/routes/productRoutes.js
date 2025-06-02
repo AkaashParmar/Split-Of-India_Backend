@@ -42,8 +42,8 @@ router.post('/:id/review', protect, addOrUpdateReview);
 router.get("/state/:stateId", getProductsByState);
 router.get("/state/slug/:slug", getProductsByStateSlug);
 
-router.put('/deals/add/:productId', setDealOfTheDay);
-router.put('/deals/remove/:productId', removeDealOfTheDay);
+router.put('/deals/add/:productId', protect, isAdmin, setDealOfTheDay);
+router.put('/deals/remove/:productId', protect, isAdmin, removeDealOfTheDay);
 router.get('/deals', getDealsOfTheDay);
 
 

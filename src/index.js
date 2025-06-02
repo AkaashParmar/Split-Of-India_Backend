@@ -17,8 +17,9 @@ const regionRoutes = require('./routes/regionRoutes.js');
 const stateRoutes = require('./routes/stateRoutes.js');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const addressRoutes = require('./routes/addressRoutes.js')
-
 dotenv.config();
+const session = require('express-session');
+const passport = require('passport');
 
 const bodyParser = require('body-parser');
 
@@ -27,6 +28,15 @@ console.log("EMAIL_USER:", process.env.EMAIL_USER);
 connectDB();
 
 const app = express();
+
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(morgan("dev"));
 
 
@@ -52,7 +62,7 @@ app.use('/api/regions', regionRoutes);
 app.use('/api/states', stateRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/addresses', addressRoutes);
-
+app.use('/api/deals', productRoutes); 
 
 // To serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
