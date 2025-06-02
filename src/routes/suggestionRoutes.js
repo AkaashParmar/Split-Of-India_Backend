@@ -14,6 +14,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Route for product suggestions
-router.post('/', upload.array('images', 5), handleSuggestionForm);
+router.post('/', ensureAuthenticated, upload.array('images', 5), handleSuggestionForm);
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  return res.status(401).json({ message: 'Unauthorized' });
+}
 
 module.exports = router;

@@ -7,9 +7,9 @@ const ProductSuggestion = require('../models/suggestions');
 const State = require("../models/stateModel.js");
 const mongoose = require("mongoose");
 const cloudinary = require("../config/cloudinary-config.js");
+const nodemailer = require('nodemailer');
 const fs = require('fs');
-
-// POST: Create product
+const {google} = require('googleapis');
 exports.createProduct = async (req, res) => {
   try {
     console.log("BODY:", req.body);
@@ -335,21 +335,37 @@ exports.getDealsOfTheDay = async (req, res) => {
 
 exports.handleSuggestionForm = async (req, res) => {
   try {
-    const { productName, categoryName, productDescription } = req.body;
-    const imagePaths = req.files.map(file => `/uploads/${file.filename}`);
+    const user = req.user;
+    if (!user || !user.accessToken) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
 
-    const newSuggestion = new ProductSuggestion({
-      productName,
-      categoryName,
-      productDescription,
-      images: imagePaths
+    const { productName, categoryName, productDescription } = req.body;
+
+    // Send email...
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: user.emails[0].value,
+        accessToken: user.accessToken,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      },
     });
 
-    await newSuggestion.save();
+    const mailOptions = {
+      from: `"${user.displayName}" <${user.emails[0].value}>`,
+      to: process.env.EMAIL_USER,
+      subject: 'Product Suggestion',
+      text: `Product: ${productName}\nCategory: ${categoryName}\nDescription: ${productDescription}`,
+    };
 
-    res.status(201).json({ message: 'Suggestion submitted successfully!' });
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: 'Email sent from logged-in user!' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error while submitting suggestion.' });
+    console.error('❌ Error in handleSuggestionForm:', err);
+    res.status(500).json({ message: 'Internal Server Error', error: err.message });
   }
 };
