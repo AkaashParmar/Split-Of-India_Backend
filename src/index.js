@@ -17,13 +17,14 @@ const regionRoutes = require('./routes/regionRoutes.js');
 const stateRoutes = require('./routes/stateRoutes.js');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const addressRoutes = require('./routes/addressRoutes.js')
-dotenv.config();
 const session = require('express-session');
 const passport = require('passport');
-
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const googleAuthRoutes = require('./routes/authRoutes'); 
+const User = require('./models/User');
 const bodyParser = require('body-parser');
 
-
+dotenv.config();
 console.log("EMAIL_USER:", process.env.EMAIL_USER); 
 connectDB();
 
@@ -32,11 +33,54 @@ const app = express();
 
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// --- Passport & Session Setup ---
+app.use(session({
+  secret: process.env.JWT_SECRET || 'default_secret',
+  resave: false,
+  saveUninitialized: false,
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  const user = await User.findById(id);
+  done(null, user);
+});
+
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/api/auth/google/callback',
+},
+async (accessToken, refreshToken, profile, done) => {
+  try {
+    let user = await User.findOne({ googleId: profile.id });
+
+    if (!user) {
+      user = await User.create({
+        googleId: profile.id,
+        email: profile.emails[0].value,
+        username: profile.displayName,
+      });
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err, null);
+  }
+}));
 
 app.get('/api/running', (req, res) => {
     res.json({ message: 'Server is running' });
@@ -44,6 +88,7 @@ app.get('/api/running', (req, res) => {
 
 
 // Routes
+app.use('/api/auth', googleAuthRoutes); 
 app.use('/api/coupons', couponRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
@@ -56,12 +101,15 @@ app.use('/api/states', stateRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/deals', productRoutes); 
-
+app.use('/api/suggest-product', suggestionRoutes);
+app.use('/api/auth', googleAuthRoutes);
 // To serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api/suggest-product', suggestionRoutes);
 
 
+// Error Middleware
+app.use(notFound);
+app.use(errorHandler);
 
 app.use((err, req, res, next) => {
     // Global error handler
@@ -73,9 +121,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Error Middleware
-app.use(notFound);
-app.use(errorHandler);
+
 
 
 // Server
