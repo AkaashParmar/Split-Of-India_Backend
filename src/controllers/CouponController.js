@@ -1,54 +1,74 @@
-const Coupon = require('../models/CouponModel');
+const Coupon = require("../models/CouponModel");
 
-// ADMIN: Create coupon
 exports.createCoupon = async (req, res) => {
-  const { code, discount, expiresAt } = req.body;
-
-  const existing = await Coupon.findOne({ code });
-  if (existing) return res.status(400).json({ message: 'Coupon already exists' });
-
-  const coupon = await Coupon.create({ code, discount, expiresAt });
-  res.status(201).json(coupon);
+  try {
+    const newCoupon = await Coupon.create(req.body);
+    res.status(201).json(newCoupon);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 };
 
-// ADMIN: Update coupon
-exports.updateCoupon = async (req, res) => {
-  const coupon = await Coupon.findById(req.params.id);
-  if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
-
-  const updated = await Coupon.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(updated);
-};
-
-// ADMIN: Delete coupon
-exports.deleteCoupon = async (req, res) => {
-  const coupon = await Coupon.findById(req.params.id);
-  if (!coupon) return res.status(404).json({ message: 'Coupon not found' });
-
-  await coupon.deleteOne();
-  res.json({ message: 'Coupon deleted' });
-};
-
-// USER: View all available coupons (not expired)
 exports.getAllCoupons = async (req, res) => {
-  const now = new Date();
-  const coupons = await Coupon.find({ expiresAt: { $gt: now } });
-  res.json(coupons);
+  try {
+    const coupons = await Coupon.find();
+    res.json(coupons);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-// USER: Apply a coupon code
+exports.deleteCoupon = async (req, res) => {
+  try {
+    await Coupon.findByIdAndDelete(req.params.id);
+    res.json({ message: "Coupon deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 exports.applyCoupon = async (req, res) => {
-  const { code } = req.body;
+  try {
+    const { code, totalAmount } = req.body;
 
-  const coupon = await Coupon.findOne({ code });
-  if (!coupon) {
-    return res.status(404).json({ message: 'Invalid coupon code' });
-  }
+    if (!code || totalAmount == null) {
+      return res.status(400).json({ message: "Coupon code and amount are required" });
+    }
 
-  const now = new Date();
-  if (coupon.expiresAt < now) {
-    return res.status(400).json({ message: 'Coupon has expired' });
-  }
+    const coupon = await Coupon.findOne({ code });
 
-  res.json({ message: 'Coupon applied', discount: coupon.discount });
+    if (!coupon || !coupon.isActive) {
+      return res.status(404).json({ message: "Coupon not found or inactive" });
+    }
+
+    // Check expiry date
+    if (coupon.expiryDate && new Date(coupon.expiryDate) < new Date()) {
+      return res.status(400).json({ message: "Coupon has expired" });
+    }
+
+    if (totalAmount < coupon.minCartValue) {
+      return res.status(400).json({ message: `Minimum cart value should be ₹${coupon.minCartValue}` });
+    }
+
+    let discount = 0;
+
+    if (coupon.discountType === "percentage") {
+      discount = (coupon.discountValue / 100) * totalAmount;
+      // Cap discount to maxDiscount if specified
+      if (coupon.maxDiscount) {
+        discount = Math.min(discount, coupon.maxDiscount);
+      }
+    } else if (coupon.discountType === "flat") {
+      discount = coupon.discountValue;
+    }
+
+    // Make sure discount does not exceed totalAmount
+    discount = Math.min(discount, totalAmount);
+
+    return res.json({ discount });
+  } catch (error) {
+    console.error("Server error in applyCoupon:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

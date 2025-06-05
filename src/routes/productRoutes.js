@@ -13,7 +13,8 @@ const {
   getProductsByStateSlug,
   setDealOfTheDay,
   removeDealOfTheDay,
-  getDealsOfTheDay
+  getDealsOfTheDay,
+  checkPincodeAvailability
 } = require("../controllers/productController");
 const upload = require("../middlewares/uploadMiddleware.js");
 
@@ -45,6 +46,9 @@ router.get("/state/slug/:slug", getProductsByStateSlug);
 router.put('/deals/add/:productId', protect, isAdmin, setDealOfTheDay);
 router.put('/deals/remove/:productId', protect, isAdmin, removeDealOfTheDay);
 router.get('/deals', getDealsOfTheDay);
+
+// GET /api/products/:productId/check-pincode/:pincode
+router.get("/:productId/check-pincode/:pincode", checkPincodeAvailability);
 
 
 
