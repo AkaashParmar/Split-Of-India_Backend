@@ -10,6 +10,7 @@ const cloudinary = require("../config/cloudinary-config.js");
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const {google} = require('googleapis');
+
 exports.createProduct = async (req, res) => {
   try {
     console.log("BODY:", req.body);
@@ -62,8 +63,9 @@ exports.createProduct = async (req, res) => {
       countInStock: Number(countInStock),
       state,
       color,
-      size,
+      size: typeof size === "string" ? size.split(",").map((s) => s.trim()) : [],
       region,
+      availablePincodes: req.body.availablePincodes?.split(",").map(p => p.trim()) || [],
       isDealOfTheDay: isDealOfTheDay === "true", // handle checkbox/boolean
       image: resultCloud.secure_url,
     });
@@ -367,5 +369,22 @@ exports.handleSuggestionForm = async (req, res) => {
   } catch (err) {
     console.error('❌ Error in handleSuggestionForm:', err);
     res.status(500).json({ message: 'Internal Server Error', error: err.message });
+  }
+};
+
+exports.checkPincodeAvailability = async (req, res) => {
+  const { productId, pincode } = req.params;
+
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const available = product.availablePincodes.includes(pincode);
+    res.json({ available });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };

@@ -10,11 +10,18 @@ const productSchema = new mongoose.Schema(
     brand: { type: String, required: true },
 
     color: { type: String },
-    region: { type: String },
-    size: {
+    region: {
       type: String,
-      enum: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+      enum: ["North", "South", "East", "West"],
+      required: true,
     },
+
+    size: [
+      {
+        type: String,
+        enum: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+      },
+    ],
 
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     price: { type: Number, required: true, min: 0 },
@@ -38,6 +45,11 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "State",
       required: true,
+    },
+
+    availablePincodes: {
+      type: [String], // e.g. ['110001', '560001']
+      default: [],
     },
 
     isDealOfTheDay: {

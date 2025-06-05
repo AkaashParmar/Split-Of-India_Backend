@@ -9,13 +9,13 @@ const {
 } = require('../controllers/CouponController');
 const { protect, isAdmin } = require('../middlewares/authMiddleware');
 
-// Admin routes
-router.post('/', protect, isAdmin, createCoupon);
-router.put('/:id', protect, isAdmin, updateCoupon);
-router.delete('/:id', protect, isAdmin, deleteCoupon);
+// Admin
+router.post("/", createCoupon);
+router.get("/", getAllCoupons);
+router.delete("/:id", deleteCoupon);
 
-// User routes
-router.get('/', getAllCoupons);              // Get all valid coupons
-router.post('/apply', protect, applyCoupon); // Apply coupon (needs login)
+// User
+router.post("/apply", applyCoupon);
+
 
 module.exports = router;
