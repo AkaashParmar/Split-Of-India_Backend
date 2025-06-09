@@ -11,14 +11,15 @@ const sendContactMail = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
+        user: process.env.EMAIL_USER, // your server email
         pass: process.env.EMAIL_PASS,
       },
     });
 
     const mailOptions = {
-      from: email,
+      from: `"Spirit of India Contact" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
+      replyTo: email,
       subject: 'New Contact Query from Spirit of India',
       html: `
         <h2>New Contact Submission</h2>
