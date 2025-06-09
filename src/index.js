@@ -38,6 +38,8 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -103,8 +105,9 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/deals', productRoutes); 
 app.use('/api/suggest-product', suggestionRoutes);
 app.use('/api/auth', googleAuthRoutes);
+
 // To serve uploaded images
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // Error Middleware
