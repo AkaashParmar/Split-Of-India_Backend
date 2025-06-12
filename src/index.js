@@ -23,6 +23,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const googleAuthRoutes = require('./routes/authRoutes'); 
 const User = require('./models/User');
 const bodyParser = require('body-parser');
+const jobRoutes = require('./routes/jobApplicationRoutes');
 
 dotenv.config();
 console.log("EMAIL_USER:", process.env.EMAIL_USER); 
@@ -87,7 +88,7 @@ async (accessToken, refreshToken, profile, done) => {
 app.get('/api/running', (req, res) => {
     res.json({ message: 'Server is running' });
 }); 
-
+app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use('/api/auth', googleAuthRoutes); 
@@ -105,7 +106,7 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/deals', productRoutes); 
 app.use('/api/suggest-product', suggestionRoutes);
 app.use('/api/auth', googleAuthRoutes);
-
+app.use('/api/jobs', jobRoutes);
 // To serve uploaded images
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
