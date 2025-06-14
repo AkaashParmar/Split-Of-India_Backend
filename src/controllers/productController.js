@@ -63,6 +63,7 @@ exports.createProduct = async (req, res) => {
       countInStock: Number(countInStock),
       state,
       color,
+       tags: [String],
       size: typeof size === "string" ? size.split(",").map((s) => s.trim()) : [],
       region,
       availablePincodes: req.body.availablePincodes?.split(",").map(p => p.trim()) || [],
@@ -386,5 +387,50 @@ exports.checkPincodeAvailability = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get similar products (e.g., by category or tags)
+exports.getSimilarProducts = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const product = await Product.findById(id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    let similar = await Product.find({
+      _id: { $ne: product._id },
+      category: product.category,
+    }).limit(8);
+
+    // Fallback: if no similar found, return random products
+    if (similar.length === 0) {
+      similar = await Product.find({ _id: { $ne: product._id } }).limit(8);
+    }
+
+    res.json(similar);
+  } catch (err) {
+    console.error("Error in getSimilarProducts:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+// Get recommended products (can be random or based on tags)
+exports.getRecommendedProducts = async (req, res) => {
+  try {
+    const recommended = await Product.aggregate([{ $sample: { size: 8 } }]);
+    res.json(recommended);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

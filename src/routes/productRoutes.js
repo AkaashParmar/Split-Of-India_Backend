@@ -14,7 +14,10 @@ const {
   setDealOfTheDay,
   removeDealOfTheDay,
   getDealsOfTheDay,
-  checkPincodeAvailability
+  checkPincodeAvailability,
+  getAllProducts,
+  getSimilarProducts,
+  getRecommendedProducts,
 } = require("../controllers/productController");
 const upload = require("../middlewares/uploadMiddleware.js");
 
@@ -47,6 +50,10 @@ router.put('/deals/add/:productId', protect, isAdmin, setDealOfTheDay);
 router.put('/deals/remove/:productId', protect, isAdmin, removeDealOfTheDay);
 router.get('/deals', getDealsOfTheDay);
 
+
+router.get("/", getAllProducts);
+router.get("/:id/similar", getSimilarProducts);
+router.get("/recommended/list", getRecommendedProducts);
 // GET /api/products/:productId/check-pincode/:pincode
 router.get("/:productId/check-pincode/:pincode", checkPincodeAvailability);
 
