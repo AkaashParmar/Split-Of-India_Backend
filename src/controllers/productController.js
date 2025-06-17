@@ -206,45 +206,60 @@ exports.getProductsByState = async (req, res) => {
 };
 
 
-// POST /api/products/:id/review
 exports.addOrUpdateReview = async (req, res) => {
-  const { star, comment } = req.body;
-  const userId = req.user._id;
+  try {
+    const { star, comment } = req.body;
+    const userId = req.user._id;
 
-  const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
-  if (!product) return res.status(404).json({ message: "Product not found" });
+    let imageUrl = null;
 
-  const existingReviewIndex = product.ratings.findIndex(
-    (r) => r.postedby.toString() === userId.toString()
-  );
+    if (req.file) {
+      const localImagePath = req.file.path;
 
-  if (existingReviewIndex !== -1) {
-    // Update existing review
-    product.ratings[existingReviewIndex].star = star;
-    product.ratings[existingReviewIndex].comment = comment;
-  } else {
-    // Add new review
-    product.ratings.push({
-      star,
-      comment,
-      postedby: userId,
+      const resultCloud = await cloudinary.uploader.upload(localImagePath, {
+        folder: "reviews",
+      });
+
+      imageUrl = resultCloud.secure_url;
+
+      fs.unlinkSync(localImagePath);
+    }
+
+    const existingReviewIndex = product.ratings.findIndex(
+      (r) => r.postedby.toString() === userId.toString()
+    );
+
+    let updatedReview;
+
+    if (existingReviewIndex !== -1) {
+      product.ratings[existingReviewIndex].star = star;
+      product.ratings[existingReviewIndex].comment = comment;
+      if (imageUrl) product.ratings[existingReviewIndex].image = imageUrl;
+      updatedReview = product.ratings[existingReviewIndex];
+    } else {
+      const newReview = {
+        star,
+        comment,
+        image: imageUrl,
+        postedby: userId,
+      };
+      product.ratings.push(newReview);
+      updatedReview = newReview;
+    }
+
+    await product.save();
+
+    res.status(201).json({
+      message: "Review submitted successfully",
+      review: updatedReview,
     });
+  } catch (err) {
+    console.error("Review error:", err.message);
+    res.status(500).json({ message: "Internal server error", error: err.message });
   }
-
-  // Recalculate average rating and number of reviews
-  const totalStars = product.ratings.reduce((acc, r) => acc + r.star, 0);
-  const averageRating = totalStars / product.ratings.length;
-
-  product.rating = averageRating;
-  product.numReviews = product.ratings.length;
-
-  await product.save();
-
-  res.status(200).json({
-    message: existingReviewIndex !== -1 ? 'Review updated' : 'Review added',
-    product,
-  });
 };
 
 

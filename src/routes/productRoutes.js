@@ -40,7 +40,8 @@ router.put("/:id", protect, isAdmin, updateProduct);
 
 // Delete a product (admin only)
 router.delete("/:id", protect, isAdmin, deleteProduct);
-router.post('/:id/review', protect, addOrUpdateReview);
+router.post("/:id/review", upload.single("image"), protect, addOrUpdateReview);
+
 
 // Get products by state
 router.get("/state/:stateId", getProductsByState);
