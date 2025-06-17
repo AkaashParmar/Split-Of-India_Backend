@@ -61,6 +61,7 @@ const productSchema = new mongoose.Schema(
       {
         star: { type: Number, min: 1, max: 5 },
         comment: { type: String },
+        image: { type: String },
         postedby: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         createdAt: { type: Date, default: Date.now },
       },

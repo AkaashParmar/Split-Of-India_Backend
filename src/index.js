@@ -24,6 +24,7 @@ const googleAuthRoutes = require('./routes/authRoutes');
 const User = require('./models/User');
 const bodyParser = require('body-parser');
 const jobRoutes = require('./routes/jobApplicationRoutes');
+const paymentRoutes = require('./routes/paymentRoutes.js')
 
 dotenv.config();
 console.log("EMAIL_USER:", process.env.EMAIL_USER); 
@@ -107,6 +108,7 @@ app.use('/api/deals', productRoutes);
 app.use('/api/suggest-product', suggestionRoutes);
 app.use('/api/auth', googleAuthRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/payment', paymentRoutes);
 // To serve uploaded images
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
