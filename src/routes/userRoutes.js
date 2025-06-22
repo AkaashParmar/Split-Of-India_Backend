@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerUser, authUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, getallUsers, deleteaUsers,addToWishlist,removeFromWishlist,getWishlist, verifyOTP, sendOtp,} = require('../controllers/userController.js');
+const { registerUser, authUser, getUserProfile, forgotPassword, googleLogin, resetPassword, updateUserProfile, getallUsers, deleteaUsers,addToWishlist,removeFromWishlist,getWishlist, verifyOTP, sendOtp,} = require('../controllers/userController.js');
 const { protect, isAdmin } = require('../middlewares/authMiddleware.js');
 
 
@@ -30,7 +30,7 @@ router.post('/wishlist/:productId', protect, addToWishlist);  // for adding to w
 router.delete('/wishlist/:productId', protect, removeFromWishlist);  // for removing from wishlist
 router.get('/wishlist', protect, getWishlist);  // for getting wishlist
 
-
+router.post('/google-login', googleLogin);
 
 //check is admin
 router.get('/admin-route', protect, isAdmin, (req, res) => {

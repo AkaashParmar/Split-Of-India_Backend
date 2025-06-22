@@ -15,6 +15,8 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
         quantity: { type: Number, required: true },
+        size: { type: String },   // ✅ add size
+        color: { type: String },  // ✅ add color
       },
     ],
     shippingAddress: {
@@ -31,6 +33,12 @@ const orderSchema = new mongoose.Schema(
     totalPrice: { type: Number, required: true },
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
+    orderStatus: {
+      type: String,
+      enum: ['In Transit', 'Delivered', 'Processing'],
+      default: 'In Transit', // ✅ default status
+    },
+    expectedDeliveryDate: { type: Date }, // ✅ delivery ETA
   },
   { timestamps: true }
 );
