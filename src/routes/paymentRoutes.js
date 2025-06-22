@@ -42,7 +42,7 @@ router.post("/order", protect, async (req, res) => {
 
     const order = new Order({
       user: req.user._id,
-      items: req.body.items,
+      orderItems: req.body.items,
       totalAmount: req.body.totalAmount,
       totalPrice: req.body.totalPrice,
       shippingAddress: req.body.shippingAddress,
@@ -61,5 +61,18 @@ router.post("/order", protect, async (req, res) => {
       .json({ message: "Error placing order", error: error.message });
   }
 });
+
+router.get("/my-orders", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).populate("orderItems.product");
+    console.log("Fetched Orders:", orders); // ✅
+    res.status(200).json(orders);
+  } catch (err) {
+    console.error("Error fetching orders:", err); // ✅
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 
 module.exports = router;

@@ -4,7 +4,11 @@ const generateToken = require("../utils/generateToken");
 const generateOTP = require("../utils/otpGenerator");
 const sendEmail = require("../utils/sendEmail");
 const bcrypt = require("bcryptjs");
+const { OAuth2Client } = require("google-auth-library");
 const { isAdmin } = require("../middlewares/authMiddleware");
+const GoogleUser = require("../models/GoogleUser");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Register a new user
 exports.registerUser = asyncHandler(async (req, res) => {
@@ -34,7 +38,13 @@ exports.registerUser = asyncHandler(async (req, res) => {
     await user.save();
 
     const message = `Your OTP is: ${otp}. It is valid for 15 minutes.`;
-    await sendEmail(user.email, "Your OTP", message);
+    await sendEmail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Your OTP",
+      text: message,
+    });
+
     // Respond with the user info and the token
     res.status(201).json({
       _id: user._id,
@@ -50,28 +60,38 @@ exports.registerUser = asyncHandler(async (req, res) => {
 });
 
 // Authenticate user & get token
-exports.authUser = async (req, res) => {
-  console.log("req.body:", req.body);
-
+exports.authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log("req.body:", req.body);
 
   const user = await User.findOne({ email });
 
-  if (user && (await user.matchPassword(password))) {
-    res.json({
-      _id: user._id,
-      username: user.username, // ✅ Correct key
-      email: user.email,
-      isAdmin: user.isAdmin,
-      token: generateToken(user._id),
-    });
-  } else {
+  if (!user) {
     res.status(401);
     throw new Error("Invalid email or password");
   }
-};
 
+  const isMatch = await user.matchPassword(password); // ✅ Use schema method
+
+  if (!isMatch) {
+    res.status(401);
+    throw new Error("Invalid email or password");
+  }
+
+  // ✅ (Optional) Check for verified user if using OTP verification
+  // if (!user.isVerified) {
+  //   res.status(403);
+  //   throw new Error("Please verify your account via OTP.");
+  // }
+
+  // ✅ Success
+  res.status(200).json({
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    isAdmin: user.isAdmin,
+    token: generateToken(user._id),
+  });
+});
 
 // Get a single user profile
 exports.getUserProfile = asyncHandler(async (req, res) => {
@@ -80,8 +100,8 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
   if (user) {
     res.json({
       _id: user._id,
-      username: user.username,   
-      phone: user.phone,         
+      username: user.username,
+      phone: user.phone,
       email: user.email,
       isAdmin: user.isAdmin,
     });
@@ -90,7 +110,6 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 });
-
 
 // @desc    Update user profile
 exports.updateUserProfile = asyncHandler(async (req, res) => {
@@ -166,27 +185,25 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new Error("Invalid request");
-    res.status(404); // Do not reveal whether user exists
+    res.status(404);
+    throw new Error("User not found");
   }
 
-  // Check if OTP is valid and not expired
   if (user.otp !== otp || Date.now() > user.otpExpire) {
     res.status(400);
     throw new Error("Invalid or expired OTP");
   }
 
-  // Hash the new password
-  const salt = await bcrypt.genSalt(10);
-  user.password = await bcrypt.hash(newPassword, salt);
-
-  // Clear OTP fields
+  // ✅ DO NOT manually hash
+  user.password = newPassword;
   user.otp = undefined;
   user.otpExpire = undefined;
 
-  await user.save();
+  await user.save(); // triggers pre('save') which hashes it
+
   res.status(200).json({ message: "Password updated successfully" });
 });
+
 
 //add to wishlist
 exports.addToWishlist = asyncHandler(async (req, res) => {
@@ -266,7 +283,56 @@ exports.sendOtp = asyncHandler(async (req, res) => {
   await user.save();
 
   const message = `Your OTP is: ${otp}. It will expire in 15 minutes.`;
-  await sendEmail(user.email, "Your OTP", message);
+  await sendEmail({
+    from: process.env.EMAIL_USER,
+    to: user.email,
+    subject: "Your OTP",
+    text: `Your OTP is: ${otp}. It will expire in 15 minutes.`,
+  });
 
   res.status(200).json({ message: "OTP sent to your email" });
+});
+
+exports.googleLogin = asyncHandler(async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: "Token is required" });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub, picture } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        username: name,
+        email,
+        googleId: sub,
+        avatar: picture,
+        password: "", // you can generate a random string
+      });
+    }
+
+    const authToken = generateToken(user._id);
+
+    res.status(200).json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      token: authToken,
+    });
+  } catch (err) {
+    console.error("Google login error:", err);
+    res
+      .status(500)
+      .json({ message: "Google login failed", error: err.message });
+  }
 });

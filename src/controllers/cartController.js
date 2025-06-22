@@ -5,6 +5,7 @@ const Product = require("../models/productModel");
 const addToCart = async (req, res) => {
   const { productId } = req.params;
   const userId = req.user._id;
+  const { size, color, quantity } = req.body;
 
   const product = await Product.findById(productId);
   if (!product) return res.status(404).json({ message: "Product not found" });
@@ -12,26 +13,33 @@ const addToCart = async (req, res) => {
   let cart = await Cart.findOne({ user: userId });
 
   if (cart) {
-    // Check if product already in cart
-    const itemIndex = cart.cartItems.findIndex((p) => p.product == productId);
+    // Check if item with same productId + size + color already exists
+    const itemIndex = cart.cartItems.findIndex(
+      (item) =>
+        item.product.toString() === productId &&
+        item.size === size &&
+        item.color === color
+    );
 
     if (itemIndex > -1) {
-      // If product exists, increase quantity
-      cart.cartItems[itemIndex].quantity += 1;
+      // If exists, increase quantity
+      cart.cartItems[itemIndex].quantity += quantity || 1;
     } else {
-      cart.cartItems.push({ product: productId, quantity: 1 });
+      // Else, add new item
+      cart.cartItems.push({ product: productId, size, color, quantity: quantity || 1 });
     }
   } else {
-    // Create new cart
+    // New cart for user
     cart = new Cart({
       user: userId,
-      cartItems: [{ product: productId, quantity: 1 }],
+      cartItems: [{ product: productId, size, color, quantity: quantity || 1 }],
     });
   }
 
   await cart.save();
   res.status(200).json(cart);
 };
+
 
 // Get cart
 const getCart = async (req, res) => {
