@@ -9,7 +9,7 @@ const productSchema = new mongoose.Schema(
     description: { type: String, required: true },
     brand: { type: String, required: true },
 
-    color: { type: String },
+    color: [{ type: String }],
     region: {
       type: String,
       enum: ["North", "South", "East", "West"],
