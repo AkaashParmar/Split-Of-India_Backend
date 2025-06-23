@@ -26,6 +26,7 @@ const bodyParser = require('body-parser');
 const jobRoutes = require('./routes/jobApplicationRoutes');
 const paymentRoutes = require('./routes/paymentRoutes.js')
 const Razorpay = require('razorpay');
+const { protect } = require("../src/middlewares/authMiddleware.js");
 
 dotenv.config();
 console.log("EMAIL_USER:", process.env.EMAIL_USER); 
@@ -118,7 +119,6 @@ app.use('/api/deals', productRoutes);
 app.use('/api/suggest-product', suggestionRoutes);
 app.use('/api/auth', googleAuthRoutes);
 app.use('/api/jobs', jobRoutes);
-app.use('/api/payment', paymentRoutes);
 // To serve uploaded images
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -137,10 +137,78 @@ app.get("/get-razorpay-key", (req, res) => {
   }
 });
 
-// const razorpay = new Razorpay({
-//   key_id: process.env.RAZORPAY_KEY_ID,
-//   key_secret: process.env.RAZORPAY_KEY_SECRET,
-// });
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+app.post("/create-order", async (req, res) => {
+  console.log("Create order");
+  console.log("body", req.body);
+
+  try {
+    const { amount } = req.body;
+
+    if (!amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount is required to create order",
+      });
+    }
+
+    const options = {
+      amount: amount * 100, // convert to paise
+      currency: "INR",
+      receipt: "receipt_" + Math.random().toString(36).substring(7), // random ID
+    };
+
+    const order = await razorpay.orders.create(options);
+    console.log("Order created successfully:", order);
+
+    res.status(200).json(order);
+  } catch (err) {
+    console.error("Razorpay order creation error:", err);
+    res.status(500).json({ error: "Something went wrong while creating Razorpay order" });
+  }
+});
+
+
+app.post("/order", protect, async (req, res) => {
+  try {
+    console.log("Incoming Order Payload:", req.body); // ✅ Already logging
+
+    const order = new Order({
+      user: req.user._id,
+      orderItems: req.body.items,
+      totalAmount: req.body.totalAmount,
+      totalPrice: req.body.totalPrice,
+      shippingAddress: req.body.shippingAddress,
+      paymentInfo: req.body.paymentInfo,
+    });
+
+    console.log("totalPrice:", req.body.totalPrice);
+    console.log("shippingAddress:", req.body.shippingAddress);
+
+    await order.save();
+    res.status(201).json({ message: "Order placed successfully", order });
+  } catch (error) {
+    console.error("Error placing order:", error);
+    res
+      .status(500)
+      .json({ message: "Error placing order", error: error.message });
+  }
+});
+
+app.get("/my-orders", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.user._id }).populate("orderItems.product");
+    console.log("Fetched Orders:", orders); // ✅
+    res.status(200).json(orders);
+  } catch (err) {
+    console.error("Error fetching orders:", err); // ✅
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // Error Middleware
 app.use(notFound);
