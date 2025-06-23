@@ -25,6 +25,7 @@ const User = require('./models/GoogleUser');
 const bodyParser = require('body-parser');
 const jobRoutes = require('./routes/jobApplicationRoutes');
 const paymentRoutes = require('./routes/paymentRoutes.js')
+const Razorpay = require('razorpay');
 
 dotenv.config();
 console.log("EMAIL_USER:", process.env.EMAIL_USER); 
@@ -121,6 +122,25 @@ app.use('/api/payment', paymentRoutes);
 // To serve uploaded images
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
+// get Razorpay key (for frontend to access)
+app.get("/get-razorpay-key", (req, res) => {
+  try {
+    console.log("Razorpay Keys fetched successfully");
+    res.status(200).json({
+      key: process.env.RAZORPAY_KEY_ID,
+      secret: process.env.RAZORPAY_KEY_SECRET, // Optional, don’t expose in frontend
+    });
+  } catch (error) {
+    console.error("Error fetching Razorpay keys:", error);
+    res.status(500).json({ message: "Failed to fetch keys", error: error.message });
+  }
+});
+
+// const razorpay = new Razorpay({
+//   key_id: process.env.RAZORPAY_KEY_ID,
+//   key_secret: process.env.RAZORPAY_KEY_SECRET,
+// });
 
 // Error Middleware
 app.use(notFound);
