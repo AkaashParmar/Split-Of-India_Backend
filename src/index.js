@@ -27,6 +27,7 @@ const jobRoutes = require('./routes/jobApplicationRoutes');
 const paymentRoutes = require('./routes/paymentRoutes.js')
 const Razorpay = require('razorpay');
 const { protect } = require("../src/middlewares/authMiddleware.js");
+const Order = require('./models/paymentModel.js');
 
 dotenv.config();
 console.log("EMAIL_USER:", process.env.EMAIL_USER); 
