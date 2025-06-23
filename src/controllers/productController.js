@@ -62,7 +62,7 @@ exports.createProduct = async (req, res) => {
       discount,
       countInStock: Number(countInStock),
       state,
-      color,
+      color: typeof color === "string" ? color.split(",").map(c => c.trim()) : [],
        tags: [String],
       size: typeof size === "string" ? size.split(",").map((s) => s.trim()) : [],
       region,
@@ -250,17 +250,27 @@ exports.addOrUpdateReview = async (req, res) => {
       updatedReview = newReview;
     }
 
+    // ✅ Recalculate average rating and total number of reviews
+    const totalStars = product.ratings.reduce((sum, r) => sum + r.star, 0);
+    const averageRating = totalStars / product.ratings.length;
+
+    product.rating = Number(averageRating.toFixed(1));
+    product.numReviews = product.ratings.length;
+
     await product.save();
 
     res.status(201).json({
       message: "Review submitted successfully",
       review: updatedReview,
+      updatedRating: product.rating,
+      totalReviews: product.numReviews,
     });
   } catch (err) {
     console.error("Review error:", err.message);
     res.status(500).json({ message: "Internal server error", error: err.message });
   }
 };
+
 
 
 // Get products by state slug

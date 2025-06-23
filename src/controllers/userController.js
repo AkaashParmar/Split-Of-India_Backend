@@ -205,13 +205,17 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 });
 
 
-//add to wishlist
+// add to wishlist
 exports.addToWishlist = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   const productId = req.params.productId;
 
-  if (!user.wishlist.includes(productId)) {
+  const alreadyInWishlist = user.wishlist.some(
+    (id) => id.toString() === productId
+  );
+
+  if (!alreadyInWishlist) {
     user.wishlist.push(productId);
     await user.save();
     res.status(200).json({ message: "Product added to wishlist" });
@@ -220,6 +224,7 @@ exports.addToWishlist = asyncHandler(async (req, res) => {
     throw new Error("Product already in wishlist");
   }
 });
+
 
 //remove form wishlist
 exports.removeFromWishlist = asyncHandler(async (req, res) => {
