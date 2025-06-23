@@ -18,7 +18,7 @@ const razorpay = new Razorpay({
 // ✅ Create Razorpay order
 router.post("/create-order", async (req, res) => {
   const { amount } = req.body;
-
+ console.log("Creating Razorpay order with amount:", amount);
   try {
     const options = {
       amount: amount * 100, // Razorpay uses paise
@@ -27,9 +27,10 @@ router.post("/create-order", async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
+    console.log("Order created successfully:", order);
     res.status(200).json(order);
   } catch (err) {
-    console.error("Error creating Razorpay order:", err);
+    console.error("Razorpay error details:", err);
     res
       .status(500)
       .json({ error: "Something went wrong while creating Razorpay order" });
