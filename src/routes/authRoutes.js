@@ -9,16 +9,18 @@ router.get('/google', passport.authenticate('google', {
   prompt: 'consent',
 }));
 
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 // Step 2: Callback from Google after user login
 router.get('/google/callback', passport.authenticate('google', {
-  failureRedirect: 'http://localhost:5173/login?error=oauth_failed',
-  session: true, // you can set to false if using JWT instead
+  failureRedirect: `${frontendUrl}/login?error=oauth_failed`,
+  session: true,
 }), (req, res) => {
   // User authenticated successfully
   const user = req.user;
 
   // Redirect to frontend with user info encoded in query string
-  const redirectUrl = `http://localhost:5173/google-success?user=${encodeURIComponent(JSON.stringify({
+  const redirectUrl = `${frontendUrl}/google-success?user=${encodeURIComponent(JSON.stringify({
     id: user._id,
     email: user.email,
     username: user.username,

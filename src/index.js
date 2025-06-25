@@ -118,7 +118,6 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/deals', productRoutes); 
 app.use('/api/suggest-product', suggestionRoutes);
-app.use('/api/auth', googleAuthRoutes);
 app.use('/api/jobs', jobRoutes);
 // To serve uploaded images
 // app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
